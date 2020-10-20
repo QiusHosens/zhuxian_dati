@@ -133,6 +133,6 @@ if __name__=="__main__":
     # geci_file.truncate()
     # geci_file.close()
 
-    start = 66901
-    end = 103994
+    start = 95805
+    end = 103966
     get_and_save_geci_list(geci_url_list, geci_file_path, start, end)
