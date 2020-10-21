@@ -12,7 +12,4 @@ raw_out = res.json().get('data').get('raw_out')
 results = []
 for raw in raw_out:
     results.append(raw[1])
-print results
-
-str = '\u600e\u6837\u7684\u96e8,\u600e\u6837\u7684\u591c,\u600e\u6837\u7684\u6211'
-print str.decode('unicode-escape')
+print results[0]
