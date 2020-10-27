@@ -8,8 +8,13 @@ from collections import Counter
 # from pymouse import PyMouse
 
 folderpath = "./screen/"
-left, bottom = 0, 268
-width, height = 1930, 1200
+# left, bottom = 974, 505
+# width, height = 660, 140
+
+left, bottom = 700, 1255
+
+width, height = 660, 140
+
 bbox = (left, bottom, left + width, bottom + height)
 
 def pointColor(x, y):

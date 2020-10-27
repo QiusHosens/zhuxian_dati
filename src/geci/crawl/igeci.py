@@ -121,7 +121,7 @@ if __name__=="__main__":
     line = geci_url_file.readline()
     geci_url_list = []
     while line:
-        print (line)
+        print line
         geci_url_list.append(line.replace('\n', ''))
         line = geci_url_file.readline()
     geci_url_file.close()
