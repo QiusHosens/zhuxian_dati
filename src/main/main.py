@@ -7,7 +7,8 @@
 from elasticsearch import Elasticsearch
 import requests
 from datetime import datetime
-# from PIL import ImageGrab, Image
+import time
+from PIL import ImageGrab, Image
 
 url = 'http://114.115.155.228:8089/api/tr-run/'
 es = Elasticsearch(['114.115.155.228:29200'])
@@ -19,6 +20,16 @@ left, bottom = 0, 268
 # width, height = 1930, 1200
 width, height = 574, 48
 bbox = (left, bottom, left + width, bottom + height)
+
+def screenRegion(file_addr):
+    try:
+        img = ImageGrab.grab(bbox)
+        # newfilename = "{}{}.png".format(image_path, int(time.time() * 1000))
+        img.save(file_addr)
+        print("screen saved! " + file_addr)
+        return file_addr
+    except Exception as e:
+        print("error:",e)
 
 def ocr(image_addr):
     img1_file = {
@@ -80,60 +91,67 @@ def search(keys):
     return query['hits']['hits']
 
 if __name__=="__main__":
-    # 每隔5s执行一次,执行
-    dt = datetime.now()
-    dtstr = dt.strftime('%Y%m%d%H%M%S%f')
-    # file_addr = image_path + dtstr + '.png'
-    file_addr = './images/test_1.png'
-    # 截图 TODO
-    # 识别题目
-    empty_pos, titles = ocr(file_addr)
-    # 搜索歌词
-    # 去掉最后一个条件
-    titles.pop()
-    condition = ""
-    index = 0
-    for key in titles:
+    # 每隔5s执行一次,执行180次
+    interval = 5
+    count = 180
+    times = 0
+    while times < count:
+        dt = datetime.now()
+        dtstr = dt.strftime('%Y%m%d%H%M%S%f')
+        file_addr = image_path + dtstr + '.png'
+        # file_addr = './images/test_1.png'
+        # 截图 TODO
+        screenRegion(file_addr)
+        # 识别题目
+        empty_pos, titles = ocr(file_addr)
+        # 搜索歌词
+        # 去掉最后一个条件
+        titles.pop()
+        condition = ""
+        index = 0
+        for key in titles:
+            if empty_pos == index:
+                condition += "_"
+            condition += key
+            index += 1
         if empty_pos == index:
             condition += "_"
-        condition += key
-        index += 1
-    if empty_pos == index:
-        condition += "_"
-    print condition
-    gecis = search(titles)
-    # 未搜索到结果则写入未发现文件
-    if len(gecis) == 0:
-        geci_url_file = open(not_find_file,'a')
-        geci_url_file.write(condition.encode("utf-8") + '\n')
-        geci_url_file.close()
-    # 搜索到则打印出来
-    else:
-        # print gecis
-        # hits = gecis['hits']['hits']
-        index = 0
-        for hit in gecis:
-            # print index, hit['_source']['data']
-            index += 1
-        # 有匹配则取第一条数据
-        geci = gecis[0]['_source']['data']
-
-        # 如果在0位置,则向上找到前一个逗号,到现在位置;如果是最后一个位置,则向下找到下一个逗号,从最后位置到逗号位置
-        symbol = ","
-        target = ""
-        # 找出当前填空位置所在歌词位置,分为三种情况:1、?a;2、a?b;3、a?
-        title_len = len(titles)
-        if empty_pos == 0:
-            first_index = geci.index(titles[empty_pos])
-            prefix = geci[0:first_index]
-            target = prefix[prefix.rfind(symbol):]
-        elif empty_pos >= title_len:
-            last_index = geci.index(titles[title_len - 1])
-            suffix = geci[last_index + len(titles[title_len - 1]):]
-            target = suffix[0:suffix.find(symbol)]
+        print condition
+        gecis = search(titles)
+        # 未搜索到结果则写入未发现文件
+        if len(gecis) == 0:
+            geci_url_file = open(not_find_file,'a')
+            geci_url_file.write(condition.encode("utf-8") + '\n')
+            geci_url_file.close()
+        # 搜索到则打印出来
         else:
-            prefix_index = geci.index(titles[empty_pos - 1])
-            curr_index = geci.index(titles[empty_pos])
-            target = geci[prefix_index + len(titles[empty_pos - 1]):curr_index]
-        print target
-        # TODO 直接写入相应位置
+            # print gecis
+            # hits = gecis['hits']['hits']
+            index = 0
+            for hit in gecis:
+                # print index, hit['_source']['data']
+                index += 1
+            # 有匹配则取第一条数据
+            geci = gecis[0]['_source']['data']
+
+            # 如果在0位置,则向上找到前一个逗号,到现在位置;如果是最后一个位置,则向下找到下一个逗号,从最后位置到逗号位置
+            symbol = ","
+            target = ""
+            # 找出当前填空位置所在歌词位置,分为三种情况:1、?a;2、a?b;3、a?
+            title_len = len(titles)
+            if empty_pos == 0:
+                first_index = geci.index(titles[empty_pos])
+                prefix = geci[0:first_index]
+                target = prefix[prefix.rfind(symbol):]
+            elif empty_pos >= title_len:
+                last_index = geci.index(titles[title_len - 1])
+                suffix = geci[last_index + len(titles[title_len - 1]):]
+                target = suffix[0:suffix.find(symbol)]
+            else:
+                prefix_index = geci.index(titles[empty_pos - 1])
+                curr_index = geci.index(titles[empty_pos])
+                target = geci[prefix_index + len(titles[empty_pos - 1]):curr_index]
+            print times, target
+            # TODO 直接写入相应位置
+            times += 1
+            time.sleep(interval)
