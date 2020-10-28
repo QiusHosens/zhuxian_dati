@@ -140,11 +140,11 @@ def ocr(image_addr):
 
         symbol_index = empty_pos
 
-    # 结果不要空格
+    # 结果不要空格,并且将所有句号替换为逗号
     results = []
     for raw in raw_out:
         if raw[1] != ' ':
-            results.append(raw[1])
+            results.append(raw[1].replace(u'。', ',').replace(';', ''))
     # print results[0]
     return symbol_index, results
 
