@@ -16,7 +16,7 @@ es = Elasticsearch(['114.115.155.228:29200'])
 # query = es.search(index="geci", doc_type="geci", body={"query": {"wildcard": {"data.keyword": "*当誓言划向蓝色海岸线*"}}})
 # query = es.search(index="geci", doc_type="geci", body={"query": {"match_phrase": {"data": {"query": "当誓言划向蓝色海岸线"}}}})
 # keys = ["当誓言划向蓝色海岸线", "我说我愿意相对默默无语"]
-keys = ["怎样的雨,怎样的夜,怎样的我"]
+keys = ["牵手"]
 must = []
 for key in keys:
     must.append({"match_phrase": {"data": {"query": key}}})
