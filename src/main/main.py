@@ -150,7 +150,7 @@ def ocr(image_addr):
     # 结果不要空格,并且将所有句号替换为逗号
     results = []
     for raw in raw_out:
-        if raw[1] != ' ':
+        if raw[1] != ' ' and raw[1] != '':
             results.append(raw[1].replace(u'。', ',').replace(';', ''))
     # print results[0]
     return symbol_index, results
@@ -184,7 +184,7 @@ def get_poss(source):
 
 def get_real_pos(poss, index):
     for pos in poss:
-        if pos < index:
+        if pos <= index:
             index += 1
     return index
 
@@ -198,87 +198,99 @@ if __name__=="__main__":
         dtstr = dt.strftime('%Y%m%d%H%M%S%f')
         # file_addr = image_path + dtstr + '.png'
 
-        file_addr = './images/20201027204735694896.png'
+        # file_addr = './images/20201027205232444469.png'
 
-        # dir_path = './images/'
-        # for root, dirs, files in os.walk(dir_path):
-        #     for file in files:
-        #         file_addr = dir_path + file
+        dir_path = './images/'
+        for root, dirs, files in os.walk(dir_path):
+            for file in files:
+                file_addr = dir_path + file
 
-        # 截图 TODO
-        # screenRegion(file_addr)
-        # 识别题目
-        empty_pos, titles = ocr(file_addr)
-        # 搜索歌词
-        # 去掉最后一个条件
-        # symbol_index = len(titles)
-        # for title in titles:
-        #     print title, title == '?'
-        #     if title == '?':
-        #         break
-        #     symbol_index += 1
-        # print symbol_index
-        # titles = titles[:symbol_index]
-        condition = ""
-        index = 0
-        for key in titles:
-            if empty_pos == index:
-                condition += "___"
-            condition += key
-            index += 1
-        if empty_pos == index:
-            condition += "___"
-        print condition
-        gecis = search(titles)
+                # 截图 TODO
+                # screenRegion(file_addr)
+                # 识别题目
+                empty_pos, titles = ocr(file_addr)
+                # 搜索歌词
+                # 去掉最后一个条件
+                # symbol_index = len(titles)
+                # for title in titles:
+                #     print title, title == '?'
+                #     if title == '?':
+                #         break
+                #     symbol_index += 1
+                # print symbol_index
+                # titles = titles[:symbol_index]
+                condition = ""
+                index = 0
+                for key in titles:
+                    if empty_pos == index:
+                        condition += " "
+                    condition += key
+                    index += 1
+                if empty_pos == index:
+                    condition += " "
+                print condition
+                gecis = search(titles)
 
-        target = ""
-        # 未搜索到结果则写入未发现文件
-        if len(gecis) == 0:
-            geci_url_file = open(not_find_file,'a')
-            geci_url_file.write(condition.encode("utf-8") + '\n')
-            geci_url_file.close()
-            target = 'not found'
-        # 搜索到则打印出来
-        else:
-            # print gecis
-            # hits = gecis['hits']['hits']
-            index = 0
-            for hit in gecis:
-                # print index, hit['_source']['data']
-                index += 1
-            # 有匹配则取第一条数据
-            geci = gecis[0]['_source']['data']
-            # print geci
+                target = ""
+                # 未搜索到结果则写入未发现文件
+                if len(gecis) == 0:
+                    geci_url_file = open(not_find_file,'a')
+                    geci_url_file.write(condition.encode("utf-8") + '\n')
+                    geci_url_file.close()
+                    target = 'not found'
+                # 搜索到则打印出来
+                else:
+                    # print gecis
+                    # hits = gecis['hits']['hits']
+                    index = 0
+                    for hit in gecis:
+                        # print index, hit['_source']['data']
+                        index += 1
+                    # 有匹配则取第一条数据
+                    geci = gecis[0]['_source']['data']
+                    # print geci
 
-            # 使用index的时候去掉逗号,获取结果时再加上
-            poss = get_poss(geci)
-            geci_no = geci.replace(',', '')
-            # 如果在0位置,则向上找到前一个逗号,到现在位置;如果是最后一个位置,则向下找到下一个逗号,从最后位置到逗号位置
-            symbol = ","
-            # 找出当前填空位置所在歌词位置,分为三种情况:1、?a;2、a?b;3、a?
-            title_len = len(titles)
-            if empty_pos == 0:
-                first_index = geci_no.find(titles[empty_pos].replace(',', ''))
-                if first_index > 0:
-                    first_index = get_real_pos(poss, first_index)
-                    prefix = geci[0:first_index]
-                    target = prefix[prefix.rfind(symbol):]
-            elif empty_pos >= title_len:
-                last_index = geci_no.find(titles[title_len - 1].replace(',', ''))
-                if last_index > 0:
-                    last_index = get_real_pos(poss, last_index)
-                    suffix = geci[last_index + len(titles[title_len - 1]):]
-                    target = suffix[0:suffix.find(symbol)]
-            else:
-                prefix_index = geci_no.find(titles[empty_pos - 1].replace(',', ''))
-                if prefix_index > 0:
-                    prefix_index = get_real_pos(poss, prefix_index)
-                curr_index = geci.find(titles[empty_pos])
-                if curr_index > 0:
-                    curr_index = get_real_pos(poss, curr_index)
-                if prefix_index > 0 and curr_index > 0:
-                    target = geci[prefix_index + len(titles[empty_pos - 1]):curr_index]
-        print times, target
-        # TODO 直接写入相应位置
-        times += 1
-        time.sleep(interval)
+                    # 将所有空格替换为逗号
+                    geci = geci.replace(' ', ',')
+                    # 使用index的时候去掉逗号,获取结果时再加上
+                    poss = get_poss(geci)
+                    geci_no = geci.replace(',', '')
+                    # 如果在0位置,则向上找到前一个逗号,到现在位置;如果是最后一个位置,则向下找到下一个逗号,从最后位置到逗号位置
+                    symbol = ","
+                    # 找出当前填空位置所在歌词位置,分为三种情况:1、?a;2、a?b;3、a?
+                    title_len = len(titles)
+                    if empty_pos == 0:
+                        title = titles[title_len - 1]
+                        first_index = geci_no.find(title.replace(',', ''))
+                        if first_index > 0:
+                            first_index = get_real_pos(poss, first_index)
+                            prefix = geci[0:first_index]
+                            # 如果最后一个是分隔符,则去掉
+                            while prefix[len(prefix) - 1] == ',':
+                                prefix = prefix[:len(prefix) - 1]
+                            target = prefix[prefix.rfind(symbol):]
+                    elif empty_pos >= title_len:
+                        title = titles[title_len - 1]
+                        last_index = geci_no.find(title.replace(',', ''))
+                        if last_index > 0:
+                            last_index = get_real_pos(poss, last_index)
+                            # 题目最后一个字符为逗号则减1
+                            title_index = len(title) - 1 if title[len(title) - 1] == ',' else len(title)
+                            suffix = geci[last_index + title_index:]
+                            # 如果第一个是分隔符,则去掉
+                            while suffix[0] == ',':
+                                suffix = suffix[1:]
+                            target = suffix[0:suffix.find(symbol)]
+                    else:
+                        prefix_index = geci_no.find(titles[empty_pos - 1].replace(',', ''))
+                        if prefix_index > 0:
+                            prefix_index = get_real_pos(poss, prefix_index)
+                        curr_index = geci.find(titles[empty_pos])
+                        if curr_index > 0:
+                            curr_index = get_real_pos(poss, curr_index)
+                        if prefix_index > 0 and curr_index > 0:
+                            target = geci[prefix_index + len(titles[empty_pos - 1]):curr_index]
+                print times, target
+                # TODO 直接写入相应位置
+                times += 1
+                time.sleep(interval)
